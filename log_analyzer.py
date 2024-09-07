@@ -213,7 +213,7 @@ class LogAnalyzerGUI(QMainWindow):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    app.setApplicationName('KoPobkaAnalizator')
+    app.setApplicationName('KoPobka Analizator')
     ex = LogAnalyzerGUI()
     ex.show()
     sys.exit(app.exec())
