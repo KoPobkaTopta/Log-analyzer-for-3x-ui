@@ -44,7 +44,7 @@
 Запустите скрипт с помощью Python:
 
 ```
-python log_analyzer_gui.py
+python log_analyzer.py
 ```
 
 После запуска приложения:
@@ -69,7 +69,7 @@ python log_analyzer_gui.py
 
 2. Создайте .exe файл:
    ```
-   pyinstaller --onefile --windowed log_analyzer_gui.py
+   pyinstaller --onefile --windowed log_analyzer.py
    ```
 
 3. Найдите созданный .exe файл в папке `dist`.
