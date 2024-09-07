@@ -22,7 +22,7 @@ Log Analyzer - это графическое приложение на Python д
 
 1. Клонируйте репозиторий:
    ```
-   git clone https://github.com/KoPobkaTopta/log-analyzer.git
+   git clone https://github.com/KoPobkaTopta/Log-analyzer-for-3x-ui.git
    ```
 
 2. Перейдите в директорию проекта:
