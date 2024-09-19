@@ -4,14 +4,16 @@ from datetime import datetime
 from collections import defaultdict
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                              QPushButton, QLabel, QLineEdit, QTextEdit, QComboBox, 
-                             QDateTimeEdit, QCheckBox, QDialog, QListWidget, QFileDialog)
+                             QDateTimeEdit, QCheckBox, QDialog, QListWidget, QFileDialog,
+                             QGridLayout, QGroupBox, QSplitter, QStyleFactory)
 from PyQt6.QtCore import Qt, QDateTime
-from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import QIcon, QFont
 
 class LogAnalyzer:
     def __init__(self, log_file_path):
         self.log_file_path = log_file_path
         self.logs = self.parse_logs()
+        self.torrent_users = self.find_torrent_users()
 
     def parse_logs(self):
         log_pattern = re.compile(r'(\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}) (.*?) accepted (.*?) \[(.*?)\] (?:email: (.*))?')
@@ -27,7 +29,8 @@ class LogAnalyzer:
                             'ip': self.clean_ip(ip),
                             'connection': connection,
                             'routing': routing,
-                            'email': email if email else 'N/A'
+                            'email': email if email else 'N/A',
+                            'uses_torrent': 'blocked' in routing
                         })
         except Exception as e:
             print(f"Произошла ошибка при чтении файла: {e}")
@@ -77,6 +80,9 @@ class LogAnalyzer:
                 unique_logs[email][domain] = log
         return [log for email_logs in unique_logs.values() for log in email_logs.values()]
 
+    def find_torrent_users(self):
+        return set(log['email'] for log in self.logs if log['uses_torrent'])
+
 class IPListDialog(QDialog):
     def __init__(self, ip_list, parent=None):
         super().__init__(parent)
@@ -99,62 +105,96 @@ class LogAnalyzerGUI(QMainWindow):
         self.setWindowTitle('KoPobka Analizator')
         self.setGeometry(100, 100, 800, 600)
 
-
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
-        layout = QVBoxLayout(central_widget)
+        main_layout = QVBoxLayout(central_widget)
 
-        file_layout = QHBoxLayout()
-        self.file_button = QPushButton('Выбрать файл логов')
+        # Создаем разделитель для верхней и нижней части интерфейса
+        splitter = QSplitter(Qt.Orientation.Vertical)
+        main_layout.addWidget(splitter)
+
+        # Верхняя часть интерфейса
+        top_widget = QWidget()
+        top_layout = QVBoxLayout(top_widget)
+        splitter.addWidget(top_widget)
+
+        # Группа выбора файла и клиента
+        file_client_group = QGroupBox("Файл и клиент")
+        file_client_layout = QGridLayout()
+
+        self.file_button = QPushButton('Выбрать файл')
+        self.file_button.setIcon(QIcon.fromTheme("document-open"))
         self.file_button.clicked.connect(self.choose_file)
-        file_layout.addWidget(self.file_button)
+        file_client_layout.addWidget(self.file_button, 0, 0)
+
         self.file_label = QLabel('Файл не выбран')
-        file_layout.addWidget(self.file_label)
-        layout.addLayout(file_layout)
+        file_client_layout.addWidget(self.file_label, 0, 1, 1, 2)
 
-        client_layout = QHBoxLayout()
-        client_layout.addWidget(QLabel('Выберите клиента:'))
+        file_client_layout.addWidget(QLabel('Клиент:'), 1, 0)
         self.client_combo = QComboBox()
-        client_layout.addWidget(self.client_combo)
-        self.show_ip_button = QPushButton('Показать IP')
+        file_client_layout.addWidget(self.client_combo, 1, 1)
+
+        self.show_ip_button = QPushButton('Показать IP клиента')
         self.show_ip_button.clicked.connect(self.show_ip_list)
-        client_layout.addWidget(self.show_ip_button)
-        layout.addLayout(client_layout)
+        file_client_layout.addWidget(self.show_ip_button, 1, 2)
 
-        site_layout = QHBoxLayout()
-        site_layout.addWidget(QLabel('Поиск по сайту:'))
+        self.torrent_label = QLabel('')
+        file_client_layout.addWidget(self.torrent_label, 1, 3)
+
+        file_client_group.setLayout(file_client_layout)
+        top_layout.addWidget(file_client_group)
+
+        # Группа фильтров
+        filter_group = QGroupBox("Фильтры")
+        filter_layout = QGridLayout()
+
+        filter_layout.addWidget(QLabel('Поиск по сайту:'), 0, 0)
         self.site_input = QLineEdit()
-        site_layout.addWidget(self.site_input)
-        self.search_button = QPushButton('Поиск')
-        self.search_button.clicked.connect(self.search_logs)
-        site_layout.addWidget(self.search_button)
-        layout.addLayout(site_layout)
+        filter_layout.addWidget(self.site_input, 0, 1)
 
-        exclude_site_layout = QHBoxLayout()
-        exclude_site_layout.addWidget(QLabel('Исключить сайт:'))
+        filter_layout.addWidget(QLabel('Исключить сайт:'), 0, 2)
         self.exclude_site_input = QLineEdit()
-        exclude_site_layout.addWidget(self.exclude_site_input)
-        layout.addLayout(exclude_site_layout)
+        filter_layout.addWidget(self.exclude_site_input, 0, 3)
 
-        time_layout = QHBoxLayout()
-        time_layout.addWidget(QLabel('Начало:'))
+        filter_layout.addWidget(QLabel('Начало:'), 1, 0)
         self.start_time = QDateTimeEdit(QDateTime.currentDateTime().addDays(-1))
-        time_layout.addWidget(self.start_time)
-        time_layout.addWidget(QLabel('Конец:'))
+        filter_layout.addWidget(self.start_time, 1, 1)
+
+        filter_layout.addWidget(QLabel('Конец:'), 1, 2)
         self.end_time = QDateTimeEdit(QDateTime.currentDateTime())
-        time_layout.addWidget(self.end_time)
-        layout.addLayout(time_layout)
+        filter_layout.addWidget(self.end_time, 1, 3)
 
-        self.unique_domains_checkbox = QCheckBox('Показывать только уникальные домены')
-        layout.addWidget(self.unique_domains_checkbox)
+        self.unique_domains_checkbox = QCheckBox('Только уникальные домены')
+        filter_layout.addWidget(self.unique_domains_checkbox, 2, 0, 1, 2)
 
-        self.toggle_ip_button = QPushButton('Скрыть IP')
+        self.toggle_ip_button = QPushButton('Скрыть IP из поиска')
         self.toggle_ip_button.clicked.connect(self.toggle_ip_visibility)
-        layout.addWidget(self.toggle_ip_button)
+        filter_layout.addWidget(self.toggle_ip_button, 2, 2)
+
+        self.search_button = QPushButton('Поиск')
+        self.search_button.setIcon(QIcon.fromTheme("search"))
+        self.search_button.clicked.connect(self.search_logs)
+        filter_layout.addWidget(self.search_button, 2, 3)
+
+        filter_group.setLayout(filter_layout)
+        top_layout.addWidget(filter_group)
+
+        # Нижняя часть интерфейса
+        bottom_widget = QWidget()
+        bottom_layout = QVBoxLayout(bottom_widget)
+        splitter.addWidget(bottom_widget)
 
         self.results_area = QTextEdit()
         self.results_area.setReadOnly(True)
-        layout.addWidget(self.results_area)
+        bottom_layout.addWidget(self.results_area)
+
+        # Устанавливаем шрифт
+        font = QFont("Courier")
+        font.setPointSize(10)
+        self.results_area.setFont(font)
+
+        # Применяем стиль Fusion для более современного вида
+        QApplication.setStyle(QStyleFactory.create('Fusion'))
 
     def choose_file(self):
         file_name, _ = QFileDialog.getOpenFileName(self, "Выберите файл логов", "", "Log Files (*.log);;All Files (*)")
@@ -166,6 +206,14 @@ class LogAnalyzerGUI(QMainWindow):
     def update_client_list(self):
         self.client_combo.clear()
         self.client_combo.addItems(['Все'] + self.log_analyzer.get_unique_emails())
+        self.client_combo.currentIndexChanged.connect(self.update_torrent_label)
+
+    def update_torrent_label(self):
+        if self.log_analyzer and self.client_combo.currentText() != 'Все':
+            uses_torrent = self.client_combo.currentText() in self.log_analyzer.torrent_users
+            self.torrent_label.setText('Использует торренты' if uses_torrent else 'Не использует торренты')
+        else:
+            self.torrent_label.setText('')
 
     def search_logs(self):
         if not self.log_analyzer:
@@ -208,7 +256,7 @@ class LogAnalyzerGUI(QMainWindow):
 
     def toggle_ip_visibility(self):
         self.hide_ip = not self.hide_ip
-        self.toggle_ip_button.setText('Показать IP' if self.hide_ip else 'Скрыть IP')
+        self.toggle_ip_button.setText('Показать IP в поиске' if self.hide_ip else 'Скрыть IP из поиска')
         self.search_logs()
 
 if __name__ == '__main__':
