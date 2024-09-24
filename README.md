@@ -58,7 +58,7 @@ python log_analyzer.py
 3. Нажмите кнопку "Поиск" для отображения результатов.
 4. Используйте кнопку "Скрыть IP" для убирание из списка уникальных IP-адресов.
 
-## Инструкция как использовать Detect Torrent
+## Инструкция как использовать Torrent detecter
 
 Для корректной работы Torrent detecter необходимо, чтобы в настройках 3x-ui в разделе «Настройки Xray» > «Protection Shield» была включена опция «Block BitTorrent Protocol». Также надо создать новое правило для правильного детектирования torrent у клиента, в «Настройки Xray» > «Outbounds» > «Add Outbound» > В Protocol выбираем «Blackhole» и в Tag прописываем: torrent
 Дальше в «Routing Rules» > И в 3 правиле, где стоит Bittorrent, нажимаем по нему на 3 точки и «Edit», выбираем в «Outbound Tag»: torrent. Сохраняем и перезапускаем Xray.
