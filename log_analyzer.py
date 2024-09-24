@@ -30,7 +30,7 @@ class LogAnalyzer:
                             'connection': connection,
                             'routing': routing,
                             'email': email if email else 'N/A',
-                            'uses_torrent': 'torrent' in routing.lower()
+                            'uses_torrent': 'torrent' in routing.lower()  # Теперь ищем слово "torrent"
                         })
         except Exception as e:
             print(f"Произошла ошибка при чтении файла: {e}")
@@ -124,13 +124,16 @@ class LogAnalyzerGUI(QMainWindow):
         self.setCentralWidget(central_widget)
         main_layout = QVBoxLayout(central_widget)
 
+        # Создаем разделитель для верхней и нижней части интерфейса
         splitter = QSplitter(Qt.Orientation.Vertical)
         main_layout.addWidget(splitter)
 
+        # Верхняя часть интерфейса
         top_widget = QWidget()
         top_layout = QVBoxLayout(top_widget)
         splitter.addWidget(top_widget)
 
+        # Группа выбора файла и клиента
         file_client_group = QGroupBox("Файл и клиент")
         file_client_layout = QGridLayout()
 
@@ -160,6 +163,7 @@ class LogAnalyzerGUI(QMainWindow):
         file_client_group.setLayout(file_client_layout)
         top_layout.addWidget(file_client_group)
 
+        # Группа фильтров
         filter_group = QGroupBox("Фильтры")
         filter_layout = QGridLayout()
 
@@ -194,6 +198,7 @@ class LogAnalyzerGUI(QMainWindow):
         filter_group.setLayout(filter_layout)
         top_layout.addWidget(filter_group)
 
+        # Нижняя часть интерфейса
         bottom_widget = QWidget()
         bottom_layout = QVBoxLayout(bottom_widget)
         splitter.addWidget(bottom_widget)
@@ -202,11 +207,12 @@ class LogAnalyzerGUI(QMainWindow):
         self.results_area.setReadOnly(True)
         bottom_layout.addWidget(self.results_area)
 
+        # Устанавливаем шрифт
         font = QFont("Courier")
         font.setPointSize(10)
         self.results_area.setFont(font)
 
-        
+        # Применяем стиль Fusion для более современного вида
         QApplication.setStyle(QStyleFactory.create('Fusion'))
 
     def choose_file(self):
@@ -225,7 +231,7 @@ class LogAnalyzerGUI(QMainWindow):
         if self.log_analyzer and self.client_combo.currentText() != 'Все':
             uses_torrent = self.client_combo.currentText() in self.log_analyzer.torrent_users
             self.torrent_label.setText('Использует торренты' if uses_torrent else 'Не использует торренты')
-            self.show_torrent_button.setEnabled(uses_torrent)
+            self.show_torrent_button.setEnabled(uses_torrent)  # Активируем кнопку только если клиент использует торренты
         else:
             self.torrent_label.setText('')
             self.show_torrent_button.setEnabled(False)
@@ -251,7 +257,7 @@ class LogAnalyzerGUI(QMainWindow):
         for log in filtered_logs:
             main_domain = self.log_analyzer.get_main_domain(log['connection'])
             if self.hide_ip and re.match(r'\d+\.\d+\.\d+\.\d+', main_domain):
-                continue
+                continue  # Пропускаем записи с IP-адресами, если hide_ip=True
             result_text += f"{log['timestamp']} - {main_domain}\n"
 
         self.results_area.setText(result_text)
