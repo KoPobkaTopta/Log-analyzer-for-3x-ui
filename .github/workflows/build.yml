@@ -30,8 +30,14 @@ jobs:
       run: |
         pyinstaller --onefile --windowed --noconfirm log_analyzer.py
 
-    - name: Upload Artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: log_analyzer-windows-x64
-        path: dist/log_analyzer.exe
+    - name: Move EXE to root
+      run: |
+        Move dist\log_analyzer.exe log_analyzer.exe
+
+    - name: Commit and push EXE
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add log_analyzer.exe
+        git commit -m "Add built EXE"
+        git push
