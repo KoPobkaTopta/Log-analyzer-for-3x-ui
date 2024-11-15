@@ -23,6 +23,8 @@
 
 ## Установка
 
+Для Windows x64 скачайте сам [файл](https://github.com/KoPobkaTopta/Log-analyzer-for-3x-ui/blob/main/log_analyzer.exe).
+
 1. Клонируйте репозиторий:
    ```
    git clone https://github.com/KoPobkaTopta/Log-analyzer-for-3x-ui.git
@@ -66,7 +68,6 @@ python log_analyzer.py
 ## Создание исполняемого файла
 
 Вы можете создать автономный исполняемый файл с помощью PyInstaller:
-
 1. Установите PyInstaller:
    ```
    pip install pyinstaller
