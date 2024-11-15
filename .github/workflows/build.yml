@@ -1,0 +1,37 @@
+name: Build Windows EXE
+
+on:
+  push:
+    branches:
+      - main  # Запускать workflow при пуше в ветку main
+  pull_request:
+    branches:
+      - main  # Запускать workflow при pull request в ветку main
+
+jobs:
+  build:
+    runs-on: windows-latest  # Запускать job на последней версии Windows
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3  # Использовать v3 для checkout кода
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'  # Установить Python версии 3.9
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller PyQt6
+
+    - name: Build EXE with PyInstaller
+      run: |
+        pyinstaller --onefile --windowed --noconfirm log_analyzer.py
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: log_analyzer-windows-x64
+        path: dist/log_analyzer.exe
